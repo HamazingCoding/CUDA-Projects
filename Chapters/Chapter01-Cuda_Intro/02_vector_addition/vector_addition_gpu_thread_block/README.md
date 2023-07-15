@@ -1,6 +1,6 @@
 # CUDA Array Addition
 
-This code demonstrates a basic CUDA program for adding two arrays of integers using parallel processing on the GPU.
+This code demonstrates a CUDA program for adding two arrays of integers using parallel processing on the GPU.
 
 ## Prerequisites
 
@@ -8,71 +8,29 @@ This code demonstrates a basic CUDA program for adding two arrays of integers us
 
 ## Code Explanation
 
-```c
-#include<stdio.h>
-#include<stdlib.h>
+The code performs the following steps:
 
-#define N 512
+1. Definition of array size: The macro `N` is defined with a value of 512, representing the size of the arrays to be added.
 
-void host_add(int *a, int *b, int *c) {
-    for(int idx=0;idx<N;idx++)
-        c[idx] = a[idx] + b[idx];
-}
+2. Host Function for Array Addition: The `host_add` function performs the array addition on the CPU. It iterates through each element of the arrays and computes the sum.
 
-__global__ void device_add(int *a, int *b, int *c) {
-    int index = threadIdx.x + blockIdx.x * blockDim.x;
-    c[index] = a[index] + b[index];
-}
+3. Device Function for Array Addition: The `device_add` function is executed on the GPU. It uses CUDA syntax to define a kernel function that is executed by multiple threads in parallel. Each thread calculates the sum of corresponding elements from the input arrays.
 
-// basically just fills the array with index.
-void fill_array(int *data) {
-    for(int idx=0;idx<N;idx++)
-        data[idx] = idx;
-}
+4. Array Initialization: The `fill_array` function initializes the input arrays with consecutive index values.
 
-void print_output(int *a, int *b, int *c) {
-    for(int idx=0;idx<N;idx++)
-        printf("\n %d + %d  = %d", a[idx], b[idx], c[idx]);
-}
+5. Memory Allocation: Memory is allocated for host copies of the input and output arrays (`a`, `b`, `c`). Additionally, memory is allocated for device copies of the arrays (`d_a`, `d_b`, `d_c`).
 
-int main(void) {
-    int *a, *b, *c;
-    int *d_a, *d_b, *d_c; // device copies of a, b, c
-    int threads_per_block=0, no_of_blocks=0;
+6. Data Transfer: The input arrays (`a` and `b`) are copied from the host to the device using `cudaMemcpy`.
 
-    int size = N * sizeof(int);
+7. Kernel Invocation: The `device_add` kernel function is launched on the GPU with the specified number of blocks and threads per block.
 
-    // Alloc space for host copies of a, b, c and setup input values
-    a = (int *)malloc(size);
-    fill_array(a);
-    b = (int *)malloc(size);
-    fill_array(b);
-    c = (int *)malloc(size);
+8. Result Retrieval: The computed sum array (`d_c`) is copied from the device to the host (`c`) using `cudaMemcpy`.
 
-    // Alloc space for device copies of a, b, c
-    cudaMalloc((void **)&d_a, size);
-    cudaMalloc((void **)&d_b, size);
-    cudaMalloc((void **)&d_c, size);
+9. Output Display: The `print_output` function displays the elements of the input arrays and the computed sum array.
 
-    // Copy inputs to device
-    cudaMemcpy(d_a, a, size, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_b, b, size, cudaMemcpyHostToDevice);
+10. Memory Deallocation: The allocated memory for all arrays is freed.
 
-    threads_per_block = 4;
-    no_of_blocks = N / threads_per_block;
-    device_add<<<no_of_blocks, threads_per_block>>>(d_a, d_b, d_c);
+## How to Run
 
-    // Copy result back to host
-    cudaMemcpy(c, d_c, size, cudaMemcpyDeviceToHost);
-
-    print_output(a, b, c);
-
-    free(a);
-    free(b);
-    free(c);
-    cudaFree(d_a);
-    cudaFree(d_b);
-    cudaFree(d_c);
-
-    return 0;
-}
+1. Ensure that the NVIDIA CUDA Toolkit is installed.
+2. Compile the code using the appropriate compiler command. For example:
